@@ -52,3 +52,10 @@ steps:
 |---------------------------|-------------------------------------------------|
 | `base-completeness-score` | The type completeness score of the base branch. |
 | `pr-completeness-score`   | The type completeness score of the PR branch.   |
+
+## Status & Contributions
+
+This action was created as abstraction of the usages of similar workflows in [`python-telegram-bot`](https://github.com/python-telegram-bot/python-telegram-bot) and [`aiorem`](https://github.com/Bibo-Joshi/aiorem).
+It currently only supports the main use cases.
+Contributions for further customization and additional features are welcome!
+Kindly open an issue or a pull request if you have any suggestions or improvements.
