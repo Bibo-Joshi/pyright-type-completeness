@@ -79,8 +79,8 @@ runs:
           )
           base_text = f"This PR changes type completeness from {round(base, 3)} to {round(pr, 3)}."
           
-          set_output("base-completeness-score", base)
-          set_output("pr-completeness-score", pr)
+          set_output("base-completeness-score", str(base))
+          set_output("pr-completeness-score", str(pr))
           
           if base == 0:
               text = f"Something is broken in the workflow. Reported type completeness is 0. 💥"
