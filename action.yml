@@ -28,8 +28,6 @@ outputs:
 
 runs:
   using: composite
-  env:
-    PACKAGE_NAME: ${{ inputs.package-name }}
   steps:
     - uses: actions/checkout@v4
 
@@ -49,15 +47,15 @@ runs:
       # and we can't go back to the PR branch after that in case the PR is coming from a fork
       run: |
         ${{ inputs.install-command }}
-        pyright --verifytypes ${PACKAGE_NAME} --ignoreexternal --outputjson > pr.json || true
-        pyright --verifytypes ${PACKAGE_NAME} --ignoreexternal > pr.readable || true
+        pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal --outputjson > pr.json || true
+        pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal > pr.readable || true
 
     - name: Get Base Completeness
       run: |
         git checkout ${{ github.base_ref }}
         pip install . -U
-        pyright --verifytypes ${PACKAGE_NAME} --ignoreexternal --outputjson > base.json || true
-        pyright --verifytypes ${PACKAGE_NAME} --ignoreexternal > base.readable || true
+        pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal --outputjson > base.json || true
+        pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal > base.readable || true
 
     - name: Compare Completeness
       id: compare-completeness
