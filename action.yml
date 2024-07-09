@@ -1,26 +1,108 @@
-name: Composite Action Template
-description: Get started with Composite actions
+name: Pyright Type Completeness
+description: Check Python Package Type Completeness with Pyright
 branding:
-  icon: award
-  color: green
+  icon: check-circle
+  color: blue
 inputs:
-  who-to-greet:
-    description: Who to greet
+  python-version:
+    description: Python version to use. See actions/setup-python for more information. Default is 3.x
+    required: false
+    default: 3.x
+  pyright-version:
+    description: Pyright version to use. Must be a valid version specifier for pip install, see https://packaging.python.org/en/latest/specifications/version-specifiers/#id5. By default, the latest version is used.
+    required: false
+  install-command:
+    description: The command to install the package. Default is `pip install . -U`.
+    required: false
+    default: pip install . -U
+  package-name:
+    description: The name of the package to check.
     required: true
-    default: World
 outputs:
-  greet:
-    description: The word we greeted you
-    value: ${{ steps.greet.outputs.word }}
+  base-completeness-score:
+    description: The type completeness score of the base branch.
+    value: ${{ steps.compare-completeness.outputs.base-completeness-score }}
+  pr-completeness-score:
+    description: The type completeness score of the PR branch.
+    value: ${{ steps.compare-completeness.outputs.pr-completeness-score }}
+
 runs:
   using: composite
+  env:
+    PACKAGE_NAME: ${{ inputs.package-name }}
   steps:
-    - id: greet
+    - uses: actions/checkout@v4
+
+    # https://github.com/actions/checkout/issues/329#issuecomment-674881489
+    - run: git fetch --depth=1
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install Pyright
       run: |
-        GREET="Hello ${WHO}"
-        echo "${GREET}"
-        echo "${GREET}" > greet.txt
-        echo "word=${GREET}" >> $GITHUB_OUTPUT
-      shell: bash
-      env:
-        WHO: ${{ inputs.who-to-greet }}
+        python -W ignore -m pip install pyright${{ inputs.pyright-version }}
+
+    - name: Get PR Completeness
+      # Must run before base completeness, as base completeness will check out the base branch
+      # and we can't go back to the PR branch after that in case the PR is coming from a fork
+      run: |
+        ${{ inputs.install-command }}
+        pyright --verifytypes ${PACKAGE_NAME} --ignoreexternal --outputjson > pr.json || true
+        pyright --verifytypes ${PACKAGE_NAME} --ignoreexternal > pr.readable || true
+
+    - name: Get Base Completeness
+      run: |
+        git checkout ${{ github.base_ref }}
+        pip install . -U
+        pyright --verifytypes ${PACKAGE_NAME} --ignoreexternal --outputjson > base.json || true
+        pyright --verifytypes ${PACKAGE_NAME} --ignoreexternal > base.readable || true
+
+    - name: Compare Completeness
+      id: compare-completeness
+      uses: jannekem/run-python-script-action@v1
+      with:
+        script: |
+          import json
+          import os
+          from pathlib import Path
+
+          base = float(
+            json.load(open("base.json", "rb"))["typeCompleteness"]["completenessScore"]
+          )
+          pr = float(
+            json.load(open("pr.json", "rb"))["typeCompleteness"]["completenessScore"]
+          )
+          base_text = f"This PR changes type completeness from {round(base, 3)} to {round(pr, 3)}."
+          
+          set_output("base-completeness-score", base)
+          set_output("pr-completeness-score", pr)
+          
+          if base == 0:
+              text = f"Something is broken in the workflow. Reported type completeness is 0. 💥"
+              set_summary(text)
+              print("pyright report for base branch:")
+              print(Path("base.readable").read_text(encoding="utf-8"))
+              print("\n\npyright report for PR branch:")
+              print(Path("pr.readable").read_text(encoding="utf-8"))
+              error(text)
+              exit(1)
+          
+          if pr < base:
+              text = f"{base_text} ❌"
+              set_summary(text)
+              print(Path("pr.readable").read_text(encoding="utf-8"))
+              error(text)
+              exit(1)
+          elif pr > base:
+              text = f"{base_text} ✨"
+              set_summary(text)
+              if pr < 1:
+                  print(Path("pr.readable").read_text(encoding="utf-8"))
+              print(text)
+          else:
+              text = f"{base_text} ✅"
+              set_summary(text)
+              print(Path("pr.readable").read_text(encoding="utf-8"))
+              print(text)
