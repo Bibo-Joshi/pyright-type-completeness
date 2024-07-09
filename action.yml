@@ -33,16 +33,20 @@ runs:
 
     # https://github.com/actions/checkout/issues/329#issuecomment-674881489
     - run: git fetch --depth=1
+      shell: bash
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
+
     - name: Install Pyright
+      shell: bash
       run: |
         python -W ignore -m pip install pyright${{ inputs.pyright-version }}
 
     - name: Get PR Completeness
+      shell: bash
       # Must run before base completeness, as base completeness will check out the base branch
       # and we can't go back to the PR branch after that in case the PR is coming from a fork
       run: |
@@ -51,6 +55,7 @@ runs:
         pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal > pr.readable || true
 
     - name: Get Base Completeness
+      shell: bash
       run: |
         git checkout ${{ github.base_ref }}
         pip install . -U
