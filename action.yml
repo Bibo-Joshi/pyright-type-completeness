@@ -58,7 +58,7 @@ runs:
       shell: bash
       run: |
         git checkout ${{ github.base_ref }}
-        pip install . -U
+        ${{ inputs.install-command }}
         pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal --outputjson > base.json || true
         pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal > base.readable || true
 
