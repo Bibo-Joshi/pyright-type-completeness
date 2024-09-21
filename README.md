@@ -20,7 +20,7 @@ If the type coverage of the package in the pull request is lower than the type c
 
 ```yml
 steps:
-  - uses: Bibo-Joshi/pyright-type-completeness@1.0.0
+  - uses: Bibo-Joshi/pyright-type-completeness@1.0.1
     with:
         package-name: 'your-package-name'
 ```
@@ -29,7 +29,7 @@ steps:
 
 ```yml
 steps:
-  - uses: Bibo-Joshi/pyright-type-completeness@1.0.0
+  - uses: Bibo-Joshi/pyright-type-completeness@1.0.1
     with:
       package-name: 'your-package-name'
       python-version: '3.8'
