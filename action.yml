@@ -18,6 +18,10 @@ inputs:
   package-name:
     description: The name of the package to check.
     required: true
+  py-typed-dir:
+    description: If not empty, add a `py.typed` marker to this directory prior to installation.
+    required: false
+    default: ''
 outputs:
   base-completeness-score:
     description: The type completeness score of the base branch.
@@ -45,6 +49,12 @@ runs:
       run: |
         python -W ignore -m pip install pyright${{ inputs.pyright-version }}
 
+    - name: Add py.typed marker
+      if: ${{ inputs.py-typed-dir != '' }}
+      shell: bash
+      run: |
+        touch ${{ inputs.py-typed-dir }}/py.typed
+
     - name: Get PR Completeness
       shell: bash
       # Must run before base completeness, as base completeness will check out the base branch
@@ -53,6 +63,12 @@ runs:
         ${{ inputs.install-command }}
         pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal --outputjson > pr.json || true
         pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal > pr.readable || true
+
+    - name: Add py.typed marker
+      if: ${{ inputs.py-typed-dir != '' }}
+      shell: bash
+      run: |
+        touch ${{ inputs.py-typed-dir }}/py.typed
 
     - name: Get Base Completeness
       shell: bash

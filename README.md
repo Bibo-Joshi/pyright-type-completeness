@@ -45,6 +45,7 @@ steps:
 | `install-command` | The command to install the package. This command should install the package in the current directory.                                                                                        | No       | `pip install . -U`       |
 | `python-version`  | Python version to use. See [actions/setup-python](https://github.com/actions/setup-python/blob/main/docs/advanced-usage.md#using-the-python-version-input) for more information              | No       | `3.x`                    |
 | `pyright-version` | Pyright version to use. Must be a valid version specifier for pip install, see [`pip` user guide](https://packaging.python.org/en/latest/specifications/version-specifiers/#id5) for details | No       | latest available version |
+| `py-typed-dir`    | If not empty, add a `py.typed` marker to this directory prior to installation.                                                                                                               | No       | `''` (empty)             |
 
 ## Outputs
 
