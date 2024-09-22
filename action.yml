@@ -18,6 +18,10 @@ inputs:
   package-name:
     description: The name of the package to check.
     required: true
+  add-py-typed:
+    description: Add a `py.typed` marker to the package specified by `package-name` post-installation. Useful for packages that shouldn't have one as part of their standard installation just yet.
+    required: false
+    default: false
 outputs:
   base-completeness-score:
     description: The type completeness score of the base branch.
@@ -30,7 +34,6 @@ runs:
   using: composite
   steps:
     - uses: actions/checkout@v4
-
     # https://github.com/actions/checkout/issues/329#issuecomment-674881489
     - run: git fetch --depth=1
       shell: bash
@@ -45,20 +48,40 @@ runs:
       run: |
         python -W ignore -m pip install pyright${{ inputs.pyright-version }}
 
-    - name: Get PR Completeness
+    # Must run before base completeness, as base completeness will check out the base branch
+    # and we can't go back to the PR branch after that in case the PR is coming from a fork
+    - name: Install PR version
       shell: bash
-      # Must run before base completeness, as base completeness will check out the base branch
-      # and we can't go back to the PR branch after that in case the PR is coming from a fork
       run: |
         ${{ inputs.install-command }}
+
+    - name: Add py.typed marker to installed package
+      if: ${{ fromJSON(inputs.add-py-typed) == true }}
+      shell: bash
+      run: |
+        python3 ${{ github.action_path }}/add-py-typed-marker.py ${{ inputs.package-name }}
+
+    - name: Get PR Completeness
+      shell: bash
+      run: |
         pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal --outputjson > pr.json || true
         pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal > pr.readable || true
 
-    - name: Get Base Completeness
+    - name: Install Base version
       shell: bash
       run: |
         git checkout ${{ github.base_ref }}
         ${{ inputs.install-command }}
+
+    - name: Add py.typed marker to installed package
+      if: ${{ fromJSON(inputs.add-py-typed) == true }}
+      shell: bash
+      run: |
+        python3 ${{ github.action_path }}/add-py-typed-marker.py ${{ inputs.package-name }}
+
+    - name: Get Base Completeness
+      shell: bash
+      run: |
         pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal --outputjson > base.json || true
         pyright --verifytypes ${{ inputs.package-name }} --ignoreexternal > base.readable || true
 
